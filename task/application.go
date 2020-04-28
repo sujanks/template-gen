@@ -1,38 +1,37 @@
 package task
 
 import (
+	"context"
 	"fmt"
 	"github.com/kube-sailmaker/template-gen/functions"
 	"github.com/kube-sailmaker/template-gen/model"
+	templates "github.com/kube-sailmaker/template-gen/template"
 	"strings"
 )
 
-type TemplateValues struct {
-	EnvVars map[string]string
-	Limits map[string]string
-}
-
 const (
 	appPath = "/Users/ss/workspace/manifest/user/apps/%s.yaml"
-	cpu = "cpu"
-	memory = "memory"
+	cpu     = "cpu"
+	memory  = "memory"
+	replica = "replica"
+	sep     = ":"
 )
 
 //CPU value mapping
-var CPU = map[string] string{
-	"c05": "0.5",
-	"c1": "1",
-	"c2": "2",
-	"c3": "3",
+var CPU = map[string]string{
+	"c05":     "0.5",
+	"c1":      "1",
+	"c2":      "2",
+	"c3":      "3",
 	"default": "0.5",
 }
 
 //Memory value mapping
-var MEMORY = map[string] string{
-	"m05": "0.5Gi",
-	"m1": "1Gi",
-	"m2": "2Gi",
-	"m3": "3Gi",
+var MEMORY = map[string]string{
+	"m05":     "0.5Gi",
+	"m1":      "1Gi",
+	"m2":      "2Gi",
+	"m3":      "3Gi",
 	"default": "500Mi",
 }
 
@@ -44,12 +43,38 @@ func ProcessApplication(app *model.App, args *model.Args) {
 	envVars := GenerateEnvVars(application, args)
 	limits := GetResourceLimit(application, args)
 
-	tmlValues := TemplateValues{
-		EnvVars: envVars,
-		Limits:  limits,
+	tmlValues := templates.TemplateValues{
+		Application: templates.Application{
+			Name:           app.Name,
+			Tag:            app.Version,
+			LivenessProbe:  application.LivenessProbe,
+			ReadinessProbe: application.ReadinessProbe,
+			Replicas:       limits[replica],
+		},
+		ReleaseName: args.ReleaseName,
+		Namespace:   args.Namespace,
+		Environment: args.Env,
+		EnvVars:     envVars,
+		Limits:      limits,
 	}
+	templates.Run(&tmlValues)
+	fmt.Printf("Template generated for %s", app.Name)
+}
 
-	fmt.Printf("+%v", tmlValues)
+func GetMixins(application *model.Application, args *model.Args) {
+	context.TODO()
+	for _, mxin := range application.Mixins {
+		mixin := &model.Mixin{}
+		mixinType := strings.Split(mxin, sep)
+		name := mixinType[0]
+		mType := mixinType[1]
+		GetMixin(name, &mixin, args)
+		for _, m := range mixin.Attributes {
+			if mType == m["name"] {
+
+			}
+		}
+	}
 }
 
 func GetResourceLimit(application *model.Application, args *model.Args) map[string]string {
@@ -68,8 +93,14 @@ func GetResourceLimit(application *model.Application, args *model.Args) map[stri
 			if val, ok := configs[memory]; ok {
 				memLimit = MEMORY[val]
 			}
+
+			replicaLimit := "1"
+			if val, ok := configs[replica]; ok {
+				replicaLimit = val
+			}
 			resourceLimit[cpu] = cpuLimit
 			resourceLimit[memory] = memLimit
+			resourceLimit[replica] = replicaLimit
 		}
 	}
 	return resourceLimit
@@ -81,7 +112,7 @@ func GenerateEnvVars(application *model.Application, args *model.Args) map[strin
 	//Process app resources
 	for _, appRes := range application.Resources {
 		//elasticsearch-user:sit
-		resDetails := strings.Split(appRes, ":")
+		resDetails := strings.Split(appRes, sep)
 		//TODO: Error handle
 		name := resDetails[0]
 		envType := resDetails[1]
@@ -94,7 +125,7 @@ func GenerateEnvVars(application *model.Application, args *model.Args) map[strin
 
 				//cassandra-cluster-a:test
 				if len(resTemplate.Infra) > 0 {
-					infra := strings.Split(resTemplate.Infra, ":")
+					infra := strings.Split(resTemplate.Infra, sep)
 					//TODO: Error handle
 					infraName := infra[0]
 					infraEnv := infra[1]

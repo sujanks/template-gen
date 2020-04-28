@@ -1,3 +1,4 @@
+tmp/*
 template-gen
 .idea
 .DS_Store

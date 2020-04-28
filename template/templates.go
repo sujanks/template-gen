@@ -90,15 +90,15 @@ spec:
 
                 resources:
                   limits:
-                    cpu: "{{ .Application.Cpu }}"
-                    memory:  "{{ .Application.Memory }}"   
+                    cpu: "{{ index .Limits "cpu" }}"
+                    memory:  "{{ index .Limits "memory" }}"   
                   requests:
-                    cpu:  "{{ .Application.Cpu }}"
-                    memory:  "{{ .Application.Memory }}"
+                    cpu:  "{{ index .Limits "cpu" }}"
+                    memory:  "{{ index .Limits "memory" }}"
 
-                env:{{ range $i, $env := .Application.Env }}
-                 - name: "{{ $env.Name | ToUpper }}"
-                   value: "{{ $env.Value }}"
+                env:{{ range $key, $value := .EnvVars }}
+                 - name: "{{ $key | ToUpper }}"
+                   value: "{{ $value }}"
                  {{end}}
 			affinity:
 			  nodeSelector:
@@ -114,7 +114,7 @@ func LoadTemplates(tName string) *template.Template {
 		return getTemplate("deployment.yaml", DeploymentTemplate)
 	case "ServiceTemplate":
 		return getTemplate("service.yaml", ServiceTemplate)
-    case "ServiceAccountTemplate":
+	case "ServiceAccountTemplate":
 		return getTemplate("serviceaccount.yaml", ServiceAccountTemplate)
 	}
 	return nil

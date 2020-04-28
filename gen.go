@@ -18,12 +18,14 @@ func main() {
 	dirPtr := flag.String("d", "", "Manifest director. (Required)")
 	nsPrt := flag.String("n", "", "Namespace. (Required)")
 	envPrt := flag.String("e", "", "Environment. (Required)")
+	relPrt := flag.String("r", "", "Release name. (Required)")
 	flag.Parse()
 
 	args := &model.Args{
 		ManifestDir: *dirPtr,
 		Namespace:   *nsPrt,
 		Env:         *envPrt,
+		ReleaseName: *relPrt,
 	}
 
 	relManifest := fmt.Sprintf("%s/user/releases/%s/%s.yaml", *dirPtr, *envPrt, *nsPrt)

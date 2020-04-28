@@ -4,6 +4,7 @@ type Args struct {
 	ManifestDir string
 	Namespace   string
 	Env         string
+	ReleaseName string
 }
 
 type Application struct {
@@ -18,6 +19,7 @@ type Application struct {
 }
 
 type AppTemplate struct {
-	Name   string            `yaml:"name"`
-	Config map[string]string `yaml:"config"`
+	Name    string            `yaml:"name"`
+	Replica int               `yaml:"replica"`
+	Config  map[string]string `yaml:"config"`
 }
