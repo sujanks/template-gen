@@ -1,0 +1,23 @@
+package model
+
+type Args struct {
+	ManifestDir string
+	Namespace   string
+	Env         string
+}
+
+type Application struct {
+	Name           string            `yaml:"name"`
+	LivenessProbe  string            `yaml:"liveness_probe"`
+	ReadinessProbe string            `yaml:"readiness_probe"`
+	Annotations    map[string]string `yaml:"anootations"`
+	Resources      []string          `yaml:"resources"`
+	Capabilities   []string          `yaml:"capabilities"`
+	Mixins         []string          `yaml:"mixins"`
+	Template       []AppTemplate     `yaml:"template"`
+}
+
+type AppTemplate struct {
+	Name   string            `yaml:"name"`
+	Config map[string]string `yaml:"config"`
+}
