@@ -8,3 +8,11 @@ go mod vendor
 go build
 ./template-gen -d sample-manifest -e test -n account -r Release-1
 ```
+
+Based on the release manifest it generates the following for the each application listed in the release manifest
+
+```
+- service
+- service-account
+- deployment
+```
