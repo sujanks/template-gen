@@ -11,7 +11,7 @@ type Application struct {
 	Name           string            `yaml:"name"`
 	LivenessProbe  string            `yaml:"liveness_probe"`
 	ReadinessProbe string            `yaml:"readiness_probe"`
-	Annotations    map[string]string `yaml:"anootations"`
+	Labels         map[string]string `yaml:"labels"`
 	Resources      []string          `yaml:"resources"`
 	Capabilities   []string          `yaml:"capabilities"`
 	Mixins         []string          `yaml:"mixins"`

@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	appPath = "/Users/ss/workspace/manifest/user/apps/%s.yaml"
-	cpu     = "cpu"
-	memory  = "memory"
-	replica = "replica"
-	sep     = ":"
+	appPath  = "%s/user/apps/%s.yaml"
+	cpu      = "cpu"
+	memory   = "memory"
+	replicas = "replicas"
+	sep      = ":"
 )
 
 //CPU value mapping
@@ -35,30 +35,28 @@ var MEMORY = map[string]string{
 	"default": "500Mi",
 }
 
-func ProcessApplication(app *model.App, args *model.Args) {
-	appFile := fmt.Sprintf(appPath, app.Name)
+func ProcessApplication(app *model.App, args *model.Args) *templates.Application {
+	appFile := fmt.Sprintf(appPath, args.ManifestDir, app.Name)
 	application := &model.Application{}
-	functions.UnmarshalFile(appFile, &application)
+	functions.UnmarshalFile(appFile, application)
 
 	envVars := GenerateEnvVars(application, args)
 	limits := GetResourceLimit(application, args)
 
-	tmlValues := templates.TemplateValues{
-		Application: templates.Application{
-			Name:           app.Name,
-			Tag:            app.Version,
-			LivenessProbe:  application.LivenessProbe,
-			ReadinessProbe: application.ReadinessProbe,
-			Replicas:       limits[replica],
-		},
-		ReleaseName: args.ReleaseName,
-		Namespace:   args.Namespace,
-		Environment: args.Env,
-		EnvVars:     envVars,
-		Limits:      limits,
+	appValues := templates.Application{
+		Name:           app.Name,
+		Tag:            app.Version,
+		ReleaseName:    args.ReleaseName,
+		Labels:         application.Labels,
+		LivenessProbe:  application.LivenessProbe,
+		ReadinessProbe: application.ReadinessProbe,
+		Replicas:       limits[replicas],
+		EnvVars:        envVars,
+		Limits:         limits,
 	}
-	templates.Run(&tmlValues)
-	fmt.Printf("Template generated for %s", app.Name)
+	/*templates.Run(&tmlValues)
+	fmt.Printf("Template generated for %s", app.Name)*/
+	return &appValues
 }
 
 func GetMixins(application *model.Application, args *model.Args) {
@@ -95,12 +93,12 @@ func GetResourceLimit(application *model.Application, args *model.Args) map[stri
 			}
 
 			replicaLimit := "1"
-			if val, ok := configs[replica]; ok {
+			if val, ok := configs[replicas]; ok {
 				replicaLimit = val
 			}
 			resourceLimit[cpu] = cpuLimit
 			resourceLimit[memory] = memLimit
-			resourceLimit[replica] = replicaLimit
+			resourceLimit[replicas] = replicaLimit
 		}
 	}
 	return resourceLimit

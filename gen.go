@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kube-sailmaker/template-gen/functions"
 	"github.com/kube-sailmaker/template-gen/model"
 	"github.com/kube-sailmaker/template-gen/task"
 	"os"
@@ -28,8 +27,5 @@ func main() {
 		ReleaseName: *relPrt,
 	}
 
-	relManifest := fmt.Sprintf("%s/user/releases/%s/%s.yaml", *dirPtr, *envPrt, *nsPrt)
-	release := model.Release{}
-	functions.UnmarshalFile(relManifest, &release)
-	task.ProcessRelease(&release, args)
+	task.GenerateTemplates(args)
 }

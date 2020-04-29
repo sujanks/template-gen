@@ -1,28 +1,37 @@
 package templates
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
 
-func Run(values *TemplateValues) {
-	tmplArray := []string{"ChartTemplate", "ServiceTemplate", "DeploymentTemplate", "ServiceAccountTemplate"}
+func Run(releaseTemplate *ReleaseTemplate) {
+	tmplArray := []string{"ServiceTemplate", "DeploymentTemplate", "ServiceAccountTemplate"}
 
-	dir := "tmp/templates"
+	dir := "tmp"
+	os.MkdirAll(dir, os.ModePerm)
+	os.Chdir(dir)
+	//tmpl := LoadTemplates("ChartTemplate", )
+
+	dir = "templates"
 	os.MkdirAll(dir, os.ModePerm)
 	os.Chdir(dir)
 
-	for _, tName := range tmplArray {
-		tmpl := LoadTemplates(tName)
+	for _, application := range releaseTemplate.Application {
+		fmt.Println("Generating template for: ", application.Name)
+		for _, tName := range tmplArray {
+			tmpl := LoadTemplates(tName, &application)
 
-		file, er := os.Create(tmpl.Name())
-		if er != nil {
-			log.Fatal("error ", er)
-		}
+			file, er := os.Create(tmpl.Name())
+			if er != nil {
+				log.Fatal("error ", er)
+			}
 
-		err := tmpl.Execute(file, values)
-		if err != nil {
-			log.Fatal("error ", err)
+			err := tmpl.Execute(file, &application)
+			if err != nil {
+				log.Fatal("error ", err)
+			}
 		}
 	}
 

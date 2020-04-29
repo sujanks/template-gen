@@ -9,27 +9,35 @@ import (
 var ChartTemplate = `apiVersion: v1
 description: A Helm chart for Kubernetes {{ .ReleaseName }}
 name: {{ .ReleaseName }}
-version: {{ .Application.Tag }}
+version: 1.0
 `
 
 var ServiceAccountTemplate = `apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .ReleaseName }}-{{ .Application.Name }}
+  name: {{ .ReleaseName }}-{{ .Name }}
   labels:
-    app.kubernetes.io/name: {{ .Application.Name }}
+    app.kubernetes.io/name: {{ .Name }}
 	app.kubernetes.io/instance: {{ .ReleaseName }}
-	app.kubernetes.io/version: {{ .Application.Tag }}
+	app.kubernetes.io/version: {{ .Tag }}
+    {{ if .Labels }}
+	{{ range $key, $value := .Labels }}{{ $key }}: {{ $value }}
+    {{ end }}
+	{{ end }}
 `
 
 var ServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
-	name: {{ .ReleaseName }}-{{ .Application.Name }}
+	name: {{ .ReleaseName }}-{{ .Name }}
 	labels:
-		app.kubernetes.io/name: {{ .Application.Name }}
+		app.kubernetes.io/name: {{ .Name }}
 		app.kubernetes.io/instance: {{ .ReleaseName }}
-		app.kubernetes.io/version: {{ .Application.Tag }}
+		app.kubernetes.io/version: {{ .Tag }}
+		{{ if .Labels }}
+		{{ range $key, $value := .Labels }}{{ $key }}: {{ $value }}
+		{{ end }}
+		{{ end }}
 spec:
 	type: ClusterIP
 	ports:
@@ -38,36 +46,40 @@ spec:
       targetPort: http
       protocol: TCP
 	selector:
-		app.kubernetes.io/name: {{ .Application.Name }}
+		app.kubernetes.io/name: {{ .Name }}
     	app.kubernetes.io/instance: {{ .ReleaseName }}
 `
 
 var DeploymentTemplate = `apiVersion: v1
 kind: Deployment
 metadata:
-	name: {{ .ReleaseName }}-{{ .Application.Name }}
+	name: {{ .ReleaseName }}-{{ .Name }}
 	labels:
-		app.kubernetes.io/name: {{ .Application.Name }}
+		app.kubernetes.io/name: {{ .Name }}
 		app.kubernetes.io/instance: {{ .ReleaseName }}
-		app.kubernetes.io/version: {{ .Application.Tag }}
+		app.kubernetes.io/version: {{ .Tag }}
+		{{ if .Labels }}
+		{{ range $key, $value := .Labels }}{{ $key }}: {{ $value }}
+		{{ end }}
+		{{ end }}
 spec:
-	replicas: {{ .Application.Replicas }}
+	replicas: {{ .Replicas }}
 	selector:
 		matchLabels:
-			app.kubernetes.io/name: {{ .Application.Name }}
+			app.kubernetes.io/name: {{ .Name }}
     		app.kubernetes.io/instance: {{ .ReleaseName }}
     template:
 		metadata:
 			labels:
-				app.kubernetes.io/name: {{ .Application.Name }}
+				app.kubernetes.io/name: {{ .Name }}
     			app.kubernetes.io/instance: {{ .ReleaseName }}
 			annotations:
 		spec:
-			serviceAccountName: {{ .ReleaseName }}-{{ .Application.Name }}
+			serviceAccountName: {{ .ReleaseName }}-{{ .Name }}
 			securityContext: 
 			containers:
-				- name: {{ .Application.Name }}
-                  image: {{ .Application.Name}}:{{ .Application.Tag}}
+				- name: {{ .Name }}
+                  image: {{ .Name}}:{{ .Tag}}
                   imagePullPolicy: IfNotPresent
 
                 ports:
@@ -77,13 +89,13 @@ spec:
 
                 livenessProbe:
                    httpGet:
-                     path: {{ .Application.LivenessProbe }}
+                     path: {{ .LivenessProbe }}
                      port: http
                    initialDelaySeconds: 100
                    timeoutSeconds: 100                
                 readinessProbe:
                    httpGet:
-                     path: {{ .Application.ReadinessProbe }}
+                     path: {{ .ReadinessProbe }}
                      port: http
                    initialDelaySeconds: 100
                    timeoutSeconds: 100
@@ -98,24 +110,23 @@ spec:
 
                 env:{{ range $key, $value := .EnvVars }}
                  - name: "{{ $key | ToUpper }}"
-                   value: "{{ $value }}"
-                 {{end}}
+                   value: "{{ $value }}"{{end}}
 			affinity:
 			  nodeSelector:
 			  tolerations:
 `
 
 //LoadTemplates parse static template to helm chart
-func LoadTemplates(tName string) *template.Template {
+func LoadTemplates(tName string, app *Application) *template.Template {
 	switch tName {
 	case "ChartTemplate":
 		return getTemplate("Chart.yaml", ChartTemplate)
 	case "DeploymentTemplate":
-		return getTemplate("deployment.yaml", DeploymentTemplate)
+		return getTemplate(fmt.Sprintf("%s-deployment.yaml", app.Name), DeploymentTemplate)
 	case "ServiceTemplate":
-		return getTemplate("service.yaml", ServiceTemplate)
+		return getTemplate(fmt.Sprintf("%s-service.yaml", app.Name), ServiceTemplate)
 	case "ServiceAccountTemplate":
-		return getTemplate("serviceaccount.yaml", ServiceAccountTemplate)
+		return getTemplate(fmt.Sprintf("%s-serviceaccount.yaml", app.Name), ServiceAccountTemplate)
 	}
 	return nil
 }

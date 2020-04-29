@@ -4,12 +4,10 @@ liveness_probe: /health
 readiness_probe: /health
 
 #version, artifact id will be added by deployer
-annotations:
+labels:
   lang: java
   artifact_type: microservice
   framework: springboot
-  #TODO ownership can be sourced from somewhere else
-  #TODO also need to distinguish app owner from release owner
   owner: team1/person
   email: team/person email
 
@@ -32,19 +30,17 @@ mixins:
 template:
 - name: test
   config:
-    replica: 1
     cpu: c05
     memory: m1
     logging_level: DEBUG
     
 - name: lab
   config:
-    replica: 1
     cpu: c1
     memory: m2
 
 - name: prod
   config:
-    replica: 1
+    replicas: 2
     cpu: c3
     memory: m3
