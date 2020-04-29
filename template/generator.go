@@ -9,12 +9,7 @@ import (
 func Run(releaseTemplate *ReleaseTemplate) {
 	tmplArray := []string{"ServiceTemplate", "DeploymentTemplate", "ServiceAccountTemplate"}
 
-	dir := "tmp"
-	os.MkdirAll(dir, os.ModePerm)
-	os.Chdir(dir)
-	//tmpl := LoadTemplates("ChartTemplate", )
-
-	dir = "templates"
+	dir := "tmp/templates"
 	os.MkdirAll(dir, os.ModePerm)
 	os.Chdir(dir)
 
