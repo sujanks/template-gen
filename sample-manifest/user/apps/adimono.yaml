@@ -24,8 +24,7 @@ capabilities:
   - read-kubernetes
 
 mixins:
- - equal-request-limit
- - java-default
+ - java:java-microservices
 
 template:
 - name: test

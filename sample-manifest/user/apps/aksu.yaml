@@ -21,8 +21,7 @@ capabilities:
   - read-kubernetes
 
 mixins:
- - equal-request-limit
- - node-microservices
+ - node:node-microservices
 
 template:
 - name: test

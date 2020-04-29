@@ -16,4 +16,6 @@ type Application struct {
 	ReadinessProbe string
 	EnvVars        map[string]string
 	Limits         map[string]string
+	Command        []string
+	Entrypoint     []string
 }

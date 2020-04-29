@@ -1,7 +1,6 @@
 package task
 
 import (
-	"context"
 	"fmt"
 	"github.com/kube-sailmaker/template-gen/functions"
 	"github.com/kube-sailmaker/template-gen/model"
@@ -40,9 +39,6 @@ func ProcessApplication(app *model.App, args *model.Args) *templates.Application
 	application := &model.Application{}
 	functions.UnmarshalFile(appFile, application)
 
-	envVars := GenerateEnvVars(application, args)
-	limits := GetResourceLimit(application, args)
-
 	appValues := templates.Application{
 		Name:           app.Name,
 		Tag:            app.Version,
@@ -50,34 +46,38 @@ func ProcessApplication(app *model.App, args *model.Args) *templates.Application
 		Labels:         application.Labels,
 		LivenessProbe:  application.LivenessProbe,
 		ReadinessProbe: application.ReadinessProbe,
-		Replicas:       limits[replicas],
-		EnvVars:        envVars,
-		Limits:         limits,
 	}
-	/*templates.Run(&tmlValues)
-	fmt.Printf("Template generated for %s", app.Name)*/
+
+	GenerateEnvVars(application, args, &appValues)
+	GenerateResourceLimit(application, args, &appValues)
+	GenerateMixins(application, args, &appValues)
+
 	return &appValues
 }
 
-func GetMixins(application *model.Application, args *model.Args) {
-	context.TODO()
+func GenerateMixins(application *model.Application, args *model.Args, appValues *templates.Application) {
+	appValues.Command = make([]string, 0)
+	appValues.Entrypoint = make([]string, 0)
 	for _, mxin := range application.Mixins {
-		mixin := &model.Mixin{}
 		mixinType := strings.Split(mxin, sep)
 		name := mixinType[0]
 		mType := mixinType[1]
-		GetMixin(name, &mixin, args)
-		for _, m := range mixin.Attributes {
-			if mType == m["name"] {
-
+		mixinList := model.MixinList{}
+		GetMixin(name, &mixinList, args)
+		for _, m := range mixinList.Mixin {
+			if mType == m.Name {
+				for k, v := range m.Env {
+					appValues.EnvVars[k] = v
+				}
+				appValues.Command = m.Cmd
+				appValues.Entrypoint = m.Entrypoint
 			}
 		}
 	}
 }
 
-func GetResourceLimit(application *model.Application, args *model.Args) map[string]string {
-	resourceLimit := make(map[string]string, 0)
-
+func GenerateResourceLimit(application *model.Application, args *model.Args, appValues *templates.Application) {
+	appValues.Limits = make(map[string]string, 0)
 	//Process app template
 	for _, tmpl := range application.Template {
 		env := tmpl.Name
@@ -96,15 +96,14 @@ func GetResourceLimit(application *model.Application, args *model.Args) map[stri
 			if val, ok := configs[replicas]; ok {
 				replicaLimit = val
 			}
-			resourceLimit[cpu] = cpuLimit
-			resourceLimit[memory] = memLimit
-			resourceLimit[replicas] = replicaLimit
+			appValues.Limits[cpu] = cpuLimit
+			appValues.Limits[memory] = memLimit
+			appValues.Limits[replicas] = replicaLimit
 		}
 	}
-	return resourceLimit
 }
 
-func GenerateEnvVars(application *model.Application, args *model.Args) map[string]string {
+func GenerateEnvVars(application *model.Application, args *model.Args, appValues *templates.Application) {
 	appEnvVars := make(map[string]string, 0)
 
 	//Process app resources
@@ -138,7 +137,7 @@ func GenerateEnvVars(application *model.Application, args *model.Args) map[strin
 			}
 		}
 	}
-	return appEnvVars
+	appValues.EnvVars = appEnvVars
 }
 
 func addToEnvVars(name string, appEnvVars map[string]string, items map[string]string) {

@@ -81,7 +81,10 @@ spec:
 				- name: {{ .Name }}
                   image: {{ .Name}}:{{ .Tag}}
                   imagePullPolicy: IfNotPresent
-
+                  {{ if .Command }}
+                  command:{{ range $cmd := .Command }}
+				   -  "{{$cmd}}"{{ end }} 
+                  {{ end }}
                 ports:
 				  - name: http
                     containerPort: 8080

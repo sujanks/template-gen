@@ -7,18 +7,18 @@ import (
 )
 
 const (
-	infraManifest = "%s/provider/infrastructure/%s.yaml"
-	mixinManifest = "%s/provider/mixins/%s.yaml"
+	infraManifest    = "%s/provider/infrastructure/%s.yaml"
+	mixinManifest    = "%s/provider/mixins/%s.yaml"
 	resourceManifest = "%s/provider/resources/%s.yaml"
 )
 
 func GetInfrastructure(name string, t interface{}, args *model.Args) {
-	file := fmt.Sprintf(infraManifest,  args.ManifestDir, name)
+	file := fmt.Sprintf(infraManifest, args.ManifestDir, name)
 	functions.UnmarshalFile(file, t)
 }
 
 func GetMixin(name string, t interface{}, args *model.Args) {
-	file := fmt.Sprintf(mixinManifest,  args.ManifestDir, )
+	file := fmt.Sprintf(mixinManifest, args.ManifestDir, name)
 	functions.UnmarshalFile(file, t)
 }
 
