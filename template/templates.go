@@ -20,103 +20,90 @@ metadata:
     app.kubernetes.io/name: {{ .Name }}
 	app.kubernetes.io/instance: {{ .ReleaseName }}
 	app.kubernetes.io/version: {{ .Tag }}
-    {{ if .Labels }}
-	{{ range $key, $value := .Labels }}{{ $key }}: {{ $value }}
-    {{ end }}
-	{{ end }}
 `
 
 var ServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
-	name: {{ .ReleaseName }}-{{ .Name }}
-	labels:
-		app.kubernetes.io/name: {{ .Name }}
-		app.kubernetes.io/instance: {{ .ReleaseName }}
-		app.kubernetes.io/version: {{ .Tag }}
-		{{ if .Labels }}
-		{{ range $key, $value := .Labels }}{{ $key }}: {{ $value }}
-		{{ end }}
-		{{ end }}
+  name: {{ .ReleaseName }}-{{ .Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Name }}
+	app.kubernetes.io/instance: {{ .ReleaseName }}
+	app.kubernetes.io/version: {{ .Tag }}
 spec:
-	type: ClusterIP
-	ports:
-	- name: http
-	  port: 80
-      targetPort: http
-      protocol: TCP
-	selector:
-		app.kubernetes.io/name: {{ .Name }}
-    	app.kubernetes.io/instance: {{ .ReleaseName }}
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{ .Name }}
+    app.kubernetes.io/instance: {{ .ReleaseName }}
 `
 
 var DeploymentTemplate = `apiVersion: v1
 kind: Deployment
 metadata:
-	name: {{ .ReleaseName }}-{{ .Name }}
-	labels:
-		app.kubernetes.io/name: {{ .Name }}
-		app.kubernetes.io/instance: {{ .ReleaseName }}
-		app.kubernetes.io/version: {{ .Tag }}
-		{{ if .Labels }}
-		{{ range $key, $value := .Labels }}{{ $key }}: {{ $value }}
-		{{ end }}
-		{{ end }}
+  name: {{ .ReleaseName }}-{{ .Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Name }}
+    app.kubernetes.io/instance: {{ .ReleaseName }}
+    app.kubernetes.io/version: {{ .Tag }}
 spec:
-	replicas: {{ .Replicas }}
-	selector:
-		matchLabels:
-			app.kubernetes.io/name: {{ .Name }}
-    		app.kubernetes.io/instance: {{ .ReleaseName }}
-    template:
-		metadata:
-			labels:
-				app.kubernetes.io/name: {{ .Name }}
-    			app.kubernetes.io/instance: {{ .ReleaseName }}
-			annotations:
-		spec:
-			serviceAccountName: {{ .ReleaseName }}-{{ .Name }}
-			securityContext: 
-			containers:
-				- name: {{ .Name }}
-                  image: {{ .Name}}:{{ .Tag}}
-                  imagePullPolicy: IfNotPresent
-                  {{ if .Command }}
-                  command:{{ range $cmd := .Command }}
-				   -  "{{$cmd}}"{{ end }} 
-                  {{ end }}
-                ports:
-				  - name: http
-                    containerPort: 8080
-                    protocol: TCP
-
-                livenessProbe:
-                   httpGet:
-                     path: {{ .LivenessProbe }}
-                     port: http
-                   initialDelaySeconds: 100
-                   timeoutSeconds: 100                
-                readinessProbe:
-                   httpGet:
-                     path: {{ .ReadinessProbe }}
-                     port: http
-                   initialDelaySeconds: 100
-                   timeoutSeconds: 100
-
-                resources:
-                  limits:
-                    cpu: "{{ index .Limits "cpu" }}"
-                    memory:  "{{ index .Limits "memory" }}"   
-                  requests:
-                    cpu:  "{{ index .Limits "cpu" }}"
-                    memory:  "{{ index .Limits "memory" }}"
-
-                env:{{ range $key, $value := .EnvVars }}
-                 - name: "{{ $key | ToUpper }}"
-                   value: "{{ $value }}"{{end}}
-			affinity:
-			  nodeSelector:
-			  tolerations:
+  replicas: {{ .Replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Name }}
+      app.kubernetes.io/instance: {{ .ReleaseName }}
+  template:
+    metadata:
+      labels:
+ 		app.kubernetes.io/name: {{ .Name }}
+    	app.kubernetes.io/instance: {{ .ReleaseName }}
+      annotations:{{ if .Annotations }}
+	    {{ range $key, $value := .Annotations }}{{ $key }}: {{ $value }}
+        {{ end }}{{ end }}
+	spec:
+      serviceAccountName: {{ .ReleaseName }}-{{ .Name }}
+	  securityContext: 
+      containers:
+       - name: {{ .Name }}
+         image: {{ .Name}}:{{ .Tag}}
+         imagePullPolicy: IfNotPresent
+         {{ if .Command }}
+         command:{{ range $cmd := .Command }}
+		 -  "{{$cmd}}"{{ end }} 
+         {{ end }}
+        ports:
+		 - name: http
+           containerPort: 8080
+           protocol: TCP
+        livenessProbe:
+           httpGet:
+             path: {{ .LivenessProbe }}
+             port: http
+           initialDelaySeconds: 100
+           timeoutSeconds: 100                
+        readinessProbe:
+           httpGet:
+             path: {{ .ReadinessProbe }}
+             port: http
+           initialDelaySeconds: 100
+           timeoutSeconds: 100
+        resources:
+           limits:
+             cpu: "{{ index .Limits "cpu" }}"
+             memory:  "{{ index .Limits "memory" }}"   
+           requests:
+             cpu:  "{{ index .Limits "cpu" }}"
+             memory:  "{{ index .Limits "memory" }}"
+        env:{{ range $key, $value := .EnvVars }}
+          - name: "{{ $key | ToUpper }}"
+            value: "{{ $value }}"{{end}}
+      affinity:
+	    nodeSelector:
+		tolerations:
 `
 
 //LoadTemplates parse static template to helm chart

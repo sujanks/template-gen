@@ -43,7 +43,7 @@ func ProcessApplication(app *model.App, args *model.Args) *templates.Application
 		Name:           app.Name,
 		Tag:            app.Version,
 		ReleaseName:    args.ReleaseName,
-		Labels:         application.Labels,
+		Annotations:    application.Annotations,
 		LivenessProbe:  application.LivenessProbe,
 		ReadinessProbe: application.ReadinessProbe,
 	}
@@ -98,7 +98,7 @@ func GenerateResourceLimit(application *model.Application, args *model.Args, app
 			}
 			appValues.Limits[cpu] = cpuLimit
 			appValues.Limits[memory] = memLimit
-			appValues.Limits[replicas] = replicaLimit
+			appValues.Replicas = replicaLimit
 		}
 	}
 }

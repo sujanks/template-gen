@@ -4,7 +4,7 @@ liveness_probe: /app/health
 readiness_probe: /app/health
 
 #version, artifact id will be added by deployer
-labels:
+annotations:
   lang: node
   artifact_type: microservice
   framework: node

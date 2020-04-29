@@ -4,7 +4,7 @@ liveness_probe: /health
 readiness_probe: /health
 
 #version, artifact id will be added by deployer
-labels:
+annotations:
   lang: java
   artifact_type: microservice
   framework: springboot

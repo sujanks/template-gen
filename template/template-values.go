@@ -10,7 +10,7 @@ type Application struct {
 	ReleaseName    string
 	Name           string
 	Tag            string
-	Labels         map[string]string
+	Annotations    map[string]string
 	Replicas       string
 	LivenessProbe  string
 	ReadinessProbe string
