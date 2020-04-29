@@ -15,21 +15,21 @@ version: 1.0
 var ServiceAccountTemplate = `apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .ReleaseName }}-{{ .Name }}
+  name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
   labels:
     app.kubernetes.io/name: {{ .Name }}
-	app.kubernetes.io/instance: {{ .ReleaseName }}
-	app.kubernetes.io/version: {{ .Tag }}
+    app.kubernetes.io/instance: {{ .ReleaseName }}
+    app.kubernetes.io/version: {{ .Tag }}
 `
 
 var ServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .ReleaseName }}-{{ .Name }}
+  name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
   labels:
     app.kubernetes.io/name: {{ .Name }}
-	app.kubernetes.io/instance: {{ .ReleaseName }}
-	app.kubernetes.io/version: {{ .Tag }}
+    app.kubernetes.io/instance: {{ .ReleaseName }}
+    app.kubernetes.io/version: {{ .Tag }}
 spec:
   type: ClusterIP
   ports:
@@ -42,14 +42,17 @@ spec:
     app.kubernetes.io/instance: {{ .ReleaseName }}
 `
 
-var DeploymentTemplate = `apiVersion: v1
+var DeploymentTemplate = `apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .ReleaseName }}-{{ .Name }}
+  name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
   labels:
     app.kubernetes.io/name: {{ .Name }}
     app.kubernetes.io/instance: {{ .ReleaseName }}
     app.kubernetes.io/version: {{ .Tag }}
+  annotations:{{ if .Annotations }}
+        {{ range $key, $value := .Annotations }}{{ $key }}: {{ $value }}
+        {{ end }}{{ end }}
 spec:
   replicas: {{ .Replicas }}
   selector:
@@ -59,51 +62,46 @@ spec:
   template:
     metadata:
       labels:
- 		app.kubernetes.io/name: {{ .Name }}
-    	app.kubernetes.io/instance: {{ .ReleaseName }}
-      annotations:{{ if .Annotations }}
-	    {{ range $key, $value := .Annotations }}{{ $key }}: {{ $value }}
-        {{ end }}{{ end }}
-	spec:
-      serviceAccountName: {{ .ReleaseName }}-{{ .Name }}
-	  securityContext: 
+        app.kubernetes.io/name: {{ .Name }}
+        app.kubernetes.io/instance: {{ .ReleaseName }}
+    spec:
+      serviceAccountName: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
       containers:
        - name: {{ .Name }}
          image: {{ .Name}}:{{ .Tag}}
          imagePullPolicy: IfNotPresent
          {{ if .Command }}
          command:{{ range $cmd := .Command }}
-		 -  "{{$cmd}}"{{ end }} 
-         {{ end }}
-        ports:
-		 - name: http
+          - "{{$cmd}}"{{ end }}{{ end }}
+         ports:
+         - name: http
            containerPort: 8080
            protocol: TCP
-        livenessProbe:
+         livenessProbe:
            httpGet:
              path: {{ .LivenessProbe }}
              port: http
            initialDelaySeconds: 100
            timeoutSeconds: 100                
-        readinessProbe:
+         readinessProbe:
            httpGet:
              path: {{ .ReadinessProbe }}
              port: http
            initialDelaySeconds: 100
            timeoutSeconds: 100
-        resources:
+         resources:
            limits:
              cpu: "{{ index .Limits "cpu" }}"
              memory:  "{{ index .Limits "memory" }}"   
            requests:
              cpu:  "{{ index .Limits "cpu" }}"
              memory:  "{{ index .Limits "memory" }}"
-        env:{{ range $key, $value := .EnvVars }}
+         env:{{ range $key, $value := .EnvVars }}
           - name: "{{ $key | ToUpper }}"
             value: "{{ $value }}"{{end}}
       affinity:
-	    nodeSelector:
-		tolerations:
+      nodeSelector:
+      tolerations:
 `
 
 //LoadTemplates parse static template to helm chart
@@ -124,6 +122,7 @@ func LoadTemplates(tName string, app *Application) *template.Template {
 func getTemplate(name string, serviceTemplate string) *template.Template {
 	funcMap := template.FuncMap{
 		"ToUpper": strings.ToUpper,
+		"ToLower": strings.ToLower,
 	}
 
 	tmpl, err := template.New(name).Funcs(funcMap).Parse(serviceTemplate)
