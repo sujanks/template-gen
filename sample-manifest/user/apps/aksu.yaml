@@ -12,7 +12,7 @@ annotations:
   email: team/person email
 
 resources:
-  - elasticsearch-account:test
+  - elasticsearch-account/test
 
 capabilities:
   - prometheus
@@ -21,7 +21,7 @@ capabilities:
   - read-kubernetes
 
 mixins:
- - node:node-microservices
+ - node/node-microservices
 
 template:
 - name: test

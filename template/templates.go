@@ -17,9 +17,9 @@ kind: ServiceAccount
 metadata:
   name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
   labels:
-    app.kubernetes.io/name: {{ .Name }}
-    app.kubernetes.io/instance: {{ .ReleaseName }}
-    app.kubernetes.io/version: {{ .Tag }}
+    app: {{ .Name }}
+    release: {{ .ReleaseName }}
+    version: {{ .Tag }}
 `
 
 var ServiceTemplate = `apiVersion: v1
@@ -27,9 +27,9 @@ kind: Service
 metadata:
   name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
   labels:
-    app.kubernetes.io/name: {{ .Name }}
-    app.kubernetes.io/instance: {{ .ReleaseName }}
-    app.kubernetes.io/version: {{ .Tag }}
+    app: {{ .Name }}
+    release: {{ .ReleaseName }}
+    version: {{ .Tag }}
 spec:
   type: ClusterIP
   ports:
@@ -38,8 +38,8 @@ spec:
     targetPort: http
     protocol: TCP
   selector:
-    app.kubernetes.io/name: {{ .Name }}
-    app.kubernetes.io/instance: {{ .ReleaseName }}
+    app: {{ .Name }}
+    release: {{ .ReleaseName }}
 `
 
 var DeploymentTemplate = `apiVersion: apps/v1
@@ -47,32 +47,31 @@ kind: Deployment
 metadata:
   name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
   labels:
-    app.kubernetes.io/name: {{ .Name }}
-    app.kubernetes.io/instance: {{ .ReleaseName }}
-    app.kubernetes.io/version: {{ .Tag }}
+    app: {{ .Name }}
+    release: {{ .ReleaseName }}
+    version: {{ .Tag }}
   annotations:{{ if .Annotations }}
-        {{ range $key, $value := .Annotations }}{{ $key }}: {{ $value }}
-        {{ end }}{{ end }}
+    {{ range $key, $value := .Annotations }}{{ $key }}: {{ $value }}
+    {{ end }}{{ end }}
 spec:
   replicas: {{ .Replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ .Name }}
-      app.kubernetes.io/instance: {{ .ReleaseName }}
+      app: {{ .Name }}
+      release: {{ .ReleaseName }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ .Name }}
-        app.kubernetes.io/instance: {{ .ReleaseName }}
+        app: {{ .Name }}
+        release: {{ .ReleaseName }}
     spec:
       serviceAccountName: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
       containers:
        - name: {{ .Name }}
          image: {{ .Name}}:{{ .Tag}}
          imagePullPolicy: IfNotPresent
-         {{ if .Command }}
-         command:{{ range $cmd := .Command }}
-          - "{{$cmd}}"{{ end }}{{ end }}
+         {{ if .Entrypoint }}command: [{{ range $entry := .Entrypoint }}'{{$entry}}', {{ end }}]{{ end }}
+         {{ if .Command }}args: [{{ range $cmd := .Command }}'{{$cmd}}', {{ end }}]{{ end }}
          ports:
          - name: http
            containerPort: 8080

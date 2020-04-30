@@ -13,7 +13,7 @@ const (
 	cpu      = "cpu"
 	memory   = "memory"
 	replicas = "replicas"
-	sep      = ":"
+	sep      = "/"
 )
 
 //CPU value mapping

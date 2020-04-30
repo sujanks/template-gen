@@ -12,9 +12,9 @@ annotations:
   email: team/person email
 
 resources:
-  - elasticsearch-user:sit
-  - cassandra:test1
-  - custom-env-group:test1
+  - elasticsearch-user/sit
+  - cassandra/test1
+  - custom-env-group/test1
   
 #service account, env from resources, configmap from vault, file-password, auto injected  
 capabilities:
@@ -24,7 +24,7 @@ capabilities:
   - read-kubernetes
 
 mixins:
- - java:java-microservices
+ - java/java-microservices
 
 template:
 - name: test
