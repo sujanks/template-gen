@@ -1,0 +1,39 @@
+apiVersin: v1
+kind: Capabilities
+metadata:
+  name: capabilities
+spec:
+  - name: prometheus
+    target: annotations
+    annotations:
+      prometheus-port: 9090
+      prometheus-metrics: /metrics
+
+  - name: empty-data-dir
+    target: volume
+    volumeMounts:
+      - name: empty-dir
+        mountPath: /tmp/data
+    volumes:
+      - name: empty-dir
+        emptyDir: "{}"
+
+  - name: secret-data-dir
+    target: volume
+    volumeMounts:
+      - name: secret-mount
+        mountPath: /k8s/secrets
+
+    volumes:
+      - name: check-dir
+        emptyDir: "{}"
+
+  - name: resolve-secret
+    target: init-container
+    options:
+      container-template: secrets-init-container
+
+  - name: watch-for-completion
+    target: container
+    options:
+      container-template: watch-container

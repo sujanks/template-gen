@@ -31,15 +31,82 @@ metadata:
     release: {{ .ReleaseName }}
     version: {{ .Tag }}
 spec:
-  type: ClusterIP
+  type: {{ .Service.Type }}
   ports:
-  - name: http
-    port: 80
-    targetPort: http
+  - name: {{ .Service.Name }}
+    port: {{ .Service.Port }}
+    targetPort: {{ .Service.TargetPort }}
     protocol: TCP
   selector:
     app: {{ .Name }}
     release: {{ .ReleaseName }}
+`
+
+var ConfigMapTemplate = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}-configmap
+  labels:
+    app: {{ .Name }}
+    release: {{ .ReleaseName }}
+    version: {{ .Tag }}
+data:{{ if .ConfigMaps }}{{ range $config := .ConfigMaps }}{{ range $k, $v := $config }}
+  {{$k}}: {{$v}}{{ end }}{{ end }}
+{{ end }}
+`
+
+var CronJobTemplate = `apiVersion: batch/b1beta1
+kind: CronJob
+metadata:
+  name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}
+  labels:
+    app: {{ .Name }}
+    release: {{ .ReleaseName }}
+    version: {{ .Tag }}
+spec:
+  schedule: {{ .Schedule }}
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 7200
+      parallelism: 1
+      backoffLimit: 6
+      template:
+	    metadata:
+	      labels:
+		    app: {{ .Name }}
+		    release: {{ .ReleaseName }}
+		    version: {{ .Tag }}
+	    spec:
+          restartPolicy: Never
+          securityContext: {}
+          containers:
+            - name: {{ .Name }}
+              image: {{ .Name}}:{{ .Tag}}
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readonlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 1000
+              {{ if .Entrypoint }}command: [{{ range $entry := .Entrypoint }}'{{$entry}}', {{ end }}]{{ end }}
+              {{ if .Command }}args: [{{ range $cmd := .Command }}'{{$cmd}}', {{ end }}]{{ end }} 
+              {{ if .EnvVars }}
+              env:{{ range $key, $value := .EnvVars }}
+                - name: "{{ $key | ToUpper }}"
+                  value: "{{ $value }}"{{end}}{{ end }}
+              {{ if .VolumeMount }}
+              volumeMounts:{{ range .VolumeMount }}
+                - name: {{ .Name }}
+                  mountPath: {{ .MountPath }}{{ end }}{{ end }}
+          {{ if .NodeSelector }}
+          nodeSelector:{{ range $key, $value := .NodeSelector }}
+		    {{ $key }}: {{ $value }}
+          {{ end }}{{ end }}
+          {{ if .Volumes }}
+          volumes:{{ range $i, $e := .Volumes }}
+           - {{ range $k, $v := $e }}{{ $k }}: {{ $v }}
+             {{ end }}{{ end }}{{ end }}
 `
 
 var DeploymentTemplate = `apiVersion: apps/v1
@@ -95,12 +162,30 @@ spec:
            requests:
              cpu:  "{{ index .Limits "cpu" }}"
              memory:  "{{ index .Limits "memory" }}"
+         {{ if .EnvVars }}
          env:{{ range $key, $value := .EnvVars }}
           - name: "{{ $key | ToUpper }}"
-            value: "{{ $value }}"{{end}}
-      affinity:
-      nodeSelector:
-      tolerations:
+            value: "{{ $value }}"{{end}}{{ end }}
+         volumeMounts:
+         {{ if .VolumeMounts }}{{ range .VolumeMounts }}
+           - name: {{ .Name }}
+             mountPath: {{ .MountPath }}{{ end }}
+         {{ end }}
+         {{ if .ConfigMaps}}
+         - name: {{ .Name }}-configmap-volume
+           mountPath: /etc/config{{ end }}
+       {{ if .NodeSelector }}
+      nodeSelector:{{ range $key, $value := .NodeSelector }}
+		{{ $key }}: {{ $value }}{{ end }}{{ end }}
+      volumes:
+      {{ if .Volumes }}{{ range $i, $e := .Volumes }}
+	  - {{ range $k, $v := $e }}{{ $k }}: {{ $v }}
+      {{ end }}{{ end }}{{ end }}
+      {{ if .ConfigMaps }}
+      - name: {{ .Name }}-configmap-volume
+        configMap: 
+          name: {{ .ReleaseName | ToLower }}-{{ .Name  | ToLower }}-configmap
+      {{ end }}
 `
 
 //LoadTemplates parse static template to helm chart
@@ -114,6 +199,10 @@ func LoadTemplates(tName string, app *Application) *template.Template {
 		return getTemplate(fmt.Sprintf("%s-service.yaml", app.Name), ServiceTemplate)
 	case "ServiceAccountTemplate":
 		return getTemplate(fmt.Sprintf("%s-serviceaccount.yaml", app.Name), ServiceAccountTemplate)
+	case "CronJobTemplate":
+		return getTemplate(fmt.Sprintf("%s-cronjob.yaml", app.Name), CronJobTemplate)
+	case "ConfigMapTemplate":
+		return getTemplate(fmt.Sprintf("%s-configmap.yaml", app.Name), ConfigMapTemplate)
 	}
 	return nil
 }

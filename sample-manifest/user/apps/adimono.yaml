@@ -15,13 +15,13 @@ resources:
   - elasticsearch-user/sit
   - cassandra/test1
   - custom-env-group/test1
+
   
 #service account, env from resources, configmap from vault, file-password, auto injected  
 capabilities:
   - prometheus
   - vault
   - file-password
-  - read-kubernetes
 
 mixins:
  - java/java-microservices

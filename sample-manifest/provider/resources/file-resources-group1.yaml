@@ -1,0 +1,17 @@
+#env specific infrastructure
+apiVersion: v1
+kind: Resource
+metadata:
+  name: fs-group1
+
+spec:
+  template:
+    - name: logback-file
+      infrastructure: file
+      element:
+        logback.xml: file:/logback.xml
+
+    - name: app-config
+      infrastructure: file
+      element:
+        app.json: file:/app.json

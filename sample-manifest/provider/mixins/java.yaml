@@ -16,10 +16,17 @@ mixin:
     env:
       JAVA_OPTS: "-Xms256m -Xmx256m -Dlog4j.configurationFile=/opt/app/log/log4j2.xml"
     cmd:
-    #unless your command is not
+      #unless your command is not
       - java
       - $JAVA_OPTS
       - /opt/app/app.jar
     #not required unless someone wants to hijack it
     entrypoint:
-     - /runner.sh
+      - /runner.sh
+  - name: springboot-app
+    resources:
+      - springboot/props
+      - fs-group1/logback-file
+      - fs-group1/app-config
+    capabilities:
+      - configmap #if not present won't mount fs-group1

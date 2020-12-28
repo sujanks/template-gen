@@ -14,6 +14,16 @@ annotations:
 resources:
   - elasticsearch-account/test
 
+configMaps:
+  - env: test
+  - appConfig: file:/app.json
+
+service:
+  name: http
+  type: clusterIP
+  port: 80
+  targetPort: 6000
+
 capabilities:
   - prometheus
   - vault
